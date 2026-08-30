@@ -22,7 +22,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .import-source/chunk-*.b64 | tr -d '\n\r' | base64 -d > /tmp/source.zip
+
+          # chunk-006 was later reused while experimenting with another archive.
+          # Restore the original sixth ZIP chunk from the commit that completed
+          # the audited source staging, then reconstruct the archive.
+          git show f080f57e2abfd2acd9604a8a7f1748884db200b3:.import-source/chunk-006.b64 > /tmp/chunk-006.b64
+          cat .import-source/chunk-001.b64 .import-source/chunk-002.b64 .import-source/chunk-003.b64 .import-source/chunk-004.b64 .import-source/chunk-005.b64 /tmp/chunk-006.b64 | tr -d '\n\r' | base64 -d > /tmp/source.zip
+
           unzip -t /tmp/source.zip >/dev/null
           rm -rf /tmp/source-import
           mkdir -p /tmp/source-import
