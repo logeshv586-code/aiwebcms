@@ -1,0 +1,52 @@
+name: Import staged source
+
+on:
+  push:
+    paths:
+      - '.import-source/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild staged archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .import-source/chunk-*.b64 | tr -d '\n\r' | base64 -d > /tmp/source.zip
+          unzip -t /tmp/source.zip >/dev/null
+          rm -rf /tmp/source-import
+          mkdir -p /tmp/source-import
+          unzip -q /tmp/source.zip -d /tmp/source-import
+
+          if [ -d /tmp/source-import/src ]; then
+            SOURCE=/tmp/source-import/src
+          else
+            SOURCE=/tmp/source-import
+          fi
+
+          rsync -a --exclude='.git' --exclude='.import-source' "$SOURCE/" ./
+          rm -rf .import-source
+
+      - name: Commit imported application
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No imported changes to commit.'
+            exit 0
+          fi
+          git commit -m 'chore: import audited commerce source'
+          git push origin HEAD:main
