@@ -1,0 +1,17 @@
+import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Plus, UserCog } from 'lucide-react';
+import { get, patch, post } from '../../services/api';
+import { useAuth } from '../../store/auth';
+import { AdminPageHead, HelpNote } from '../AdminLayout';
+
+const blank={name:'',email:'',password:'',role:'EDITOR'};
+export default function Staff(){
+ const user=useAuth((s)=>s.user);const[items,setItems]=useState(null);const[open,setOpen]=useState(false);const[form,setForm]=useState(blank);const[error,setError]=useState('');
+ async function load(){setItems(await get('/admin/staff'));}useEffect(()=>{if(user?.role==='OWNER')load().catch(()=>setItems([]));},[user]);
+ if(user?.role!=='OWNER')return <Navigate to="/admin" replace/>;
+ async function save(e){e.preventDefault();try{await post('/admin/staff',form);setOpen(false);setForm(blank);load();}catch(e){setError(e.message)}}
+ async function toggle(item){await patch(`/admin/staff/${item.id}`,{isActive:!item.isActive});load();}
+ async function role(item,role){await patch(`/admin/staff/${item.id}`,{role});load();}
+ return <><AdminPageHead eyebrow="Access" title="Staff accounts" description="Give team members access without sharing the owner password." action={<button className="button primary" onClick={()=>{setOpen(true);setError('')}}><Plus size={17}/> Add staff</button>}/><HelpNote>Editors can manage content/catalog, while managers and admins have broader operational access. Only the owner can create or change staff accounts.</HelpNote><div className="admin-panel"><div className="simple-list">{(items||[]).map((item)=><div className="simple-row" key={item.id}><div className="avatar-square"><UserCog size={18}/></div><div className="grow"><strong>{item.name||item.email}</strong><small>{item.email}</small></div>{item.role==='OWNER'?<span className="status-pill published">Owner</span>:<select value={item.role} onChange={(e)=>role(item,e.target.value)}><option>ADMIN</option><option>MANAGER</option><option>EDITOR</option></select>}<button className={`button small ${item.isActive?'secondary':'primary'}`} disabled={item.id===user.id} onClick={()=>toggle(item)}>{item.isActive?'Deactivate':'Activate'}</button></div>)}</div></div>{open&&<div className="modal-backdrop" onMouseDown={(e)=>e.currentTarget===e.target&&setOpen(false)}><form className="modal-card" onSubmit={save}><div className="modal-head"><div><span className="eyebrow">Staff</span><h2>Add team member</h2></div><button type="button" onClick={()=>setOpen(false)}>×</button></div><label><span>Name *</span><input required value={form.name} onChange={(e)=>setForm({...form,name:e.target.value})}/></label><label><span>Email *</span><input type="email" required value={form.email} onChange={(e)=>setForm({...form,email:e.target.value})}/></label><label><span>Temporary password *</span><input type="password" minLength="8" required value={form.password} onChange={(e)=>setForm({...form,password:e.target.value})}/></label><label><span>Role</span><select value={form.role} onChange={(e)=>setForm({...form,role:e.target.value})}><option value="EDITOR">Editor</option><option value="MANAGER">Manager</option><option value="ADMIN">Admin</option></select></label>{error&&<div className="alert error">{error}</div>}<div className="modal-actions"><button type="button" className="button secondary" onClick={()=>setOpen(false)}>Cancel</button><button className="button primary">Create staff account</button></div></form></div>}</>;
+}

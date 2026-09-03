@@ -1,0 +1,16 @@
+{
+  "name": "white-label-ecommerce-cms",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "check": "npm --prefix server run check",
+    "test": "npm --prefix server run test",
+    "build": "npm --prefix client run build",
+    "verify": "npm run check && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

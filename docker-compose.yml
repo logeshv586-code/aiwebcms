@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: white_label_commerce
+    volumes:
+      - commerce_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d white_label_commerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ./server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/white_label_commerce?schema=public
+      JWT_SECRET: local-docker-secret-change-before-production
+      INTEGRATION_ENCRYPTION_KEY: local-docker-integration-key-change-before-production
+      CLIENT_URL: http://localhost:4173
+      PUBLIC_SITE_URL: http://localhost:4173
+      UPLOAD_DIR: /app/uploads
+      SEED_ADMIN_EMAIL: owner@example.com
+      SEED_ADMIN_PASSWORD: ChangeMe123!
+    command: sh -c "npx prisma db push && npm run prisma:seed && npm start"
+    volumes:
+      - commerce_uploads:/app/uploads
+    ports:
+      - "5000:5000"
+
+  web:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: /api
+    depends_on:
+      - api
+    ports:
+      - "4173:80"
+
+volumes:
+  commerce_pgdata:
+  commerce_uploads:

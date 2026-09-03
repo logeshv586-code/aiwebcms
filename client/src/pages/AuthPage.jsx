@@ -1,0 +1,10 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../store/auth';
+
+export default function AuthPage({ mode = 'login' }) {
+  const login = useAuth((s) => s.login); const register = useAuth((s) => s.register); const loading = useAuth((s) => s.loading); const error = useAuth((s) => s.error); const navigate = useNavigate();
+  const [values, setValues] = useState({ name: '', email: '', phone: '', password: '' });
+  async function submit(e) { e.preventDefault(); try { const user = mode === 'login' ? await login(values.email, values.password) : await register(values); navigate(['OWNER','ADMIN','MANAGER','EDITOR'].includes(user.role) ? '/admin' : '/account'); } catch {} }
+  return <main className="auth-page"><div className="auth-card"><Link className="brand-mark" to="/">Your Store</Link><span className="eyebrow">{mode === 'login' ? 'Welcome back' : 'Create account'}</span><h1>{mode === 'login' ? 'Sign in' : 'Join the store'}</h1><form onSubmit={submit} className="stack-form">{mode === 'register' && <><label><span>Name</span><input required value={values.name} onChange={(e) => setValues({ ...values, name: e.target.value })}/></label><label><span>Phone</span><input value={values.phone} onChange={(e) => setValues({ ...values, phone: e.target.value })}/></label></>}<label><span>Email</span><input type="email" required value={values.email} onChange={(e) => setValues({ ...values, email: e.target.value })}/></label><label><span>Password</span><input type="password" required minLength="8" value={values.password} onChange={(e) => setValues({ ...values, password: e.target.value })}/></label>{error && <div className="alert error">{error}</div>}<button className="button primary full" disabled={loading}>{loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}</button>{mode === 'login' && <Link className="text-link auth-forgot" to="/forgot-password">Forgot password?</Link>}</form><p className="auth-switch">{mode === 'login' ? <>New here? <Link to="/register">Create an account</Link></> : <>Already registered? <Link to="/login">Sign in</Link></>}</p></div></main>;
+}

@@ -1,0 +1,85 @@
+name: Verify ecommerce platform
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: white_label_commerce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/white_label_commerce_test?schema=public
+      JWT_SECRET: ci-only-secret-change-in-production
+      INTEGRATION_ENCRYPTION_KEY: ci-only-integration-encryption-secret
+      CLIENT_URL: http://localhost:5173
+      PUBLIC_SITE_URL: http://localhost:5173
+      UPLOAD_DIR: ./uploads
+      SEED_ADMIN_EMAIL: ci-owner@example.com
+      SEED_ADMIN_PASSWORD: TestPassword123!
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install backend
+        working-directory: server
+        run: npm install --no-audit --no-fund
+
+      - name: Validate Prisma schema
+        working-directory: server
+        run: npx prisma validate
+
+      - name: Generate Prisma client
+        working-directory: server
+        run: npx prisma generate
+
+      - name: Create test database schema
+        working-directory: server
+        run: npx prisma db push --skip-generate
+
+      - name: Seed database
+        working-directory: server
+        run: npm run prisma:seed
+
+      - name: Backend syntax check
+        working-directory: server
+        run: npm run check
+
+      - name: Backend unit and integration tests
+        working-directory: server
+        run: npm test
+
+      - name: Install frontend
+        working-directory: client
+        run: npm install --no-audit --no-fund
+
+      - name: Build React frontend
+        working-directory: client
+        env:
+          VITE_API_URL: /api
+        run: npm run build
