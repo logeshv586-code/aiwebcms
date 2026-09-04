@@ -165,6 +165,7 @@ export default function StoreLayout() {
     ref={shellRef}
     className="store-shell"
     data-store-theme={themeMode}
+    data-store-template={theme.templateId || 'luxe-editorial'}
     data-theme-policy={themePolicy}
     data-header-sticky={theme.headerSticky === false ? 'false' : 'true'}
     style={themeVars}
