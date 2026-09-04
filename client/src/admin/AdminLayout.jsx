@@ -11,7 +11,7 @@ const nav = [
   ['Customers', '/admin/customers', Users, false, ['OWNER','ADMIN','MANAGER']],
   ['Reports', '/admin/reports', BarChart3, false, ['OWNER','ADMIN','MANAGER']],
   ['Payment review', '/admin/payment-reviews', AlertTriangle, false, ['OWNER','ADMIN','MANAGER']],
-  ['Homepage', '/admin/homepage', Boxes],
+  ['Store Designer', '/admin/homepage', Boxes],
   ['Pages & FAQ', '/admin/content', FileText],
   ['Forms & enquiries', '/admin/forms', FormInput],
   ['Navigation', '/admin/navigation', NavigationIcon],
